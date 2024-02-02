@@ -1,3 +1,21 @@
+x-frappe-service-defaults: &frappe_service_defaults
+    image: frappe/erpnext:latest
+    volumes:
+      - ./wait-for-configurator.sh:/usr/local/bin/wait-for-configurator.sh
+      - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
+    working_dir: /home/frappe/frappe-bench
+
+x-frappe-service-depends: &frappe_service_depends
+    depends_on:
+      - mariadb
+      - redis-cache
+      - redis-queue
+
+x-wait-for-configurator: &wait_for_configurator
+    entrypoint: /usr/local/bin/wait-for-configurator.sh
+    restart: always
+
 services:
   mariadb:
     image: mariadb:latest
@@ -20,7 +38,7 @@ services:
     restart: always
 
   configurator:
-    image: frappe/bench:latest
+    <<: *frappe_service_defaults
     entrypoint:
       - bash
       - -c
@@ -29,8 +47,7 @@ services:
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
           sudo chown -R frappe:frappe /home/frappe/logs &&
-          bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist frappe-bench &&
-          cd frappe-bench &&
+          bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
           bench set-config -g db_type mariadb &&
           bench set-config -g db_host mariadb &&
           bench set-config -g redis_cache redis://redis-cache:6379 &&
@@ -44,192 +61,38 @@ services:
         else
           echo "Configuration already completed."
         fi
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe
 
   gunicorn:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
-    ports:
-      - "8000:8000"
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
 
   socketio:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        node apps/frappe/socketio.js
-    ports:
-      - "9000:9000"
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: node apps/frappe/socketio.js
 
   watch:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        bench watch
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: bench watch
 
   schedule:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        bench schedule
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: bench schedule
 
   worker_short:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        bench worker --queue short
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: bench worker --queue short
 
   worker_long:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        bench worker --queue long
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: bench worker --queue long
 
   worker_default:
-    image: frappe/bench:latest
-    entrypoint:
-      - bash
-      - -c
-    command:
-      - >
-        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
-          echo "Waiting for configuration to complete...";
-          sleep 60;
-        done;
-        echo "Configuration detected, starting service...";
-        bench worker --queue default
-    volumes:
-      - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
-      - frappe-logs:/home/frappe/logs
-    working_dir: /home/frappe/frappe-bench
-    depends_on:
-      - mariadb
-      - redis-cache
-      - redis-queue
-    restart: always
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: bench worker --queue default
 
   web:
-    image: frappe/erpnext:latest
-    command:
-      - nginx-entrypoint.sh
+    <<: [*frappe_service_defaults, *wait_for_configurator]
+    command: nginx-entrypoint.sh
     environment:
       BACKEND: gunicorn:8000
       SOCKETIO: socketio:9000
@@ -239,8 +102,6 @@ services:
       UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
       PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
       CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
-    volumes:
-      - frappe-sites:/home/frappe/frappe-bench/sites
     depends_on:
       - gunicorn
       - socketio
@@ -248,5 +109,4 @@ services:
 volumes:
   frappe-data:
   frappe-logs:
-  frappe-sites:
   mariadb-data:
