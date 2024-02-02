@@ -59,12 +59,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
     ports:
       - "8000:8000"
     volumes:
@@ -83,12 +83,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          node apps/frappe/socketio.js
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        node apps/frappe/socketio.js
     ports:
       - "9000:9000"
     volumes:
@@ -107,12 +107,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          bench watch
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        bench watch
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -129,12 +129,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          bench schedule
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        bench schedule
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -151,12 +151,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          bench worker --queue short
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        bench worker --queue short
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -173,12 +173,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          bench worker --queue long
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        bench worker --queue long
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -195,12 +195,12 @@ services:
       - -c
     command:
       - >
-        if [ -f /home/frappe/frappe-bench/.configured ]; then
-          bench worker --queue default
-        else
-          echo "Configuration not completed yet."
-          sleep 60
-        fi
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do
+          echo "Waiting for configuration to complete...";
+          sleep 60;
+        done;
+        echo "Configuration detected, starting service...";
+        bench worker --queue default
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
