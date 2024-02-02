@@ -28,6 +28,7 @@ services:
       - >
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
+          sudo chown -R frappe:frappe /home/frappe/logs &&
           bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist frappe-bench &&
           cd frappe-bench &&
           bench set-config -g db_type mariadb &&
@@ -49,6 +50,7 @@ services:
       - redis-queue
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe
 
   web:
@@ -68,6 +70,7 @@ services:
       - "8000:8000"
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -92,6 +95,7 @@ services:
       - "9000:9000"
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -114,6 +118,7 @@ services:
         bench watch
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -136,6 +141,7 @@ services:
         bench schedule
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -158,6 +164,7 @@ services:
         bench worker --queue short
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -180,6 +187,7 @@ services:
         bench worker --queue long
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -202,6 +210,7 @@ services:
         bench worker --queue default
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
       - mariadb
@@ -212,3 +221,4 @@ services:
 volumes:
   mariadb-data:
   frappe-data:
+  frappe-logs:
