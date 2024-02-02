@@ -1,5 +1,7 @@
-x-frappe-service-defaults: &frappe_service_defaults
+x-frappe-image: &frappe_image
     image: frappe/erpnext:latest
+
+x-frappe-service-defaults: &frappe_service_defaults
     volumes:
       - ./wait-for-configurator.sh:/usr/local/bin/wait-for-configurator.sh
       - frappe-data:/home/frappe/frappe-bench
@@ -39,6 +41,7 @@ services:
 
   configurator:
     <<: *frappe_service_defaults
+    image: frappe/bench:latest
     entrypoint:
       - bash
       - -c
@@ -63,31 +66,31 @@ services:
         fi
 
   gunicorn:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
 
   socketio:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: node apps/frappe/socketio.js
 
   watch:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: bench watch
 
   schedule:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: bench schedule
 
   worker_short:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: bench worker --queue short
 
   worker_long:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: bench worker --queue long
 
   worker_default:
-    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: bench worker --queue default
 
   web:
