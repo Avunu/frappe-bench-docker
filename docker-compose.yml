@@ -24,25 +24,26 @@ services:
     entrypoint:
       - bash
       - -c
-    command: >
-      if [ ! -f /home/frappe/frappe-bench/.configured ]; then
-        sudo chown -R frappe:frappe /home/frappe/frappe-bench && 
-        bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench-tmp && 
-        cd frappe-bench && 
-        bench set-config -g db_type mariadb && 
-        bench set-config -g db_host mariadb && 
-        bench set-config -g redis_cache redis://redis-cache:6379 && 
-        bench set-config -g redis_queue redis://redis-queue:6379 && 
-        bench set-config -g redis_socketio redis://redis-queue:6379 && 
-        bench set-config -gp developer_mode 1 && 
-        bench new-site -no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${SITE_NAME} && 
-        bench enable-scheduler && 
-        cp -rf /home/frappe/frappe-bench-tmp/* /home/frappe/frappe-bench/ && 
-        rm -rf /home/frappe/frappe-bench-tmp/ &&
-        touch /home/frappe/frappe-bench/.configured
-      else
-        echo "Configuration already completed."
-      fi
+    command:
+      - >
+        if [ ! -f /home/frappe/frappe-bench/.configured ]; then
+          sudo chown -R frappe:frappe /home/frappe/frappe-bench && 
+          bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench-tmp && 
+          cd frappe-bench && 
+          bench set-config -g db_type mariadb && 
+          bench set-config -g db_host mariadb && 
+          bench set-config -g redis_cache redis://redis-cache:6379 && 
+          bench set-config -g redis_queue redis://redis-queue:6379 && 
+          bench set-config -g redis_socketio redis://redis-queue:6379 && 
+          bench set-config -gp developer_mode 1 && 
+          bench new-site -no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${SITE_NAME} && 
+          bench enable-scheduler && 
+          cp -rf /home/frappe/frappe-bench-tmp/* /home/frappe/frappe-bench/ && 
+          rm -rf /home/frappe/frappe-bench-tmp/ &&
+          touch /home/frappe/frappe-bench/.configured
+        else
+          echo "Configuration already completed."
+        fi
     depends_on:
       - mariadb
       - redis-cache
@@ -53,8 +54,17 @@ services:
 
   web:
     image: frappe/bench:latest
-    command: >
-      /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     ports:
       - "8000:8000"
     volumes:
@@ -68,7 +78,17 @@ services:
 
   socketio:
     image: frappe/bench:latest
-    command: node apps/frappe/socketio.js
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          node apps/frappe/socketio.js
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     ports:
       - "9000:9000"
     volumes:
@@ -81,8 +101,19 @@ services:
     restart: always
 
   watch:
+    <<: [*depends_on_configurator]
     image: frappe/bench:latest
-    command: bench watch
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          bench watch
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -94,7 +125,17 @@ services:
 
   schedule:
     image: frappe/bench:latest
-    command: bench schedule
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          bench schedule
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -106,7 +147,17 @@ services:
 
   worker_short:
     image: frappe/bench:latest
-    command: bench worker --queue short
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          bench worker --queue short
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -118,7 +169,17 @@ services:
 
   worker_long:
     image: frappe/bench:latest
-    command: bench worker --queue long
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          bench worker --queue long
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
@@ -130,6 +191,17 @@ services:
 
   worker_default:
     image: frappe/bench:latest
+    entrypoint:
+      - bash
+      - -c
+    command:
+      - >
+        if [ -f /home/frappe/frappe-bench/.configured ]; then
+          bench worker --queue default
+        else
+          echo "Configuration not completed yet."
+          sleep 60
+        fi
     volumes:
       - frappe-data:/home/frappe/frappe-bench
     working_dir: /home/frappe/frappe-bench
