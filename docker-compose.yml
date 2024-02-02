@@ -94,7 +94,7 @@ services:
     command: bench worker --queue default
 
   web:
-    <<: [*frappe_service_defaults, *wait_for_configurator]
+    <<: [*frappe_image, *frappe_service_defaults, *wait_for_configurator]
     command: nginx-entrypoint.sh
     environment:
       BACKEND: gunicorn:8000

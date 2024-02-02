@@ -1,5 +1,5 @@
 #!/bin/bash
-# wait-for-configuration.sh
+# wait-for-configurator.sh
 
 # Wait for the .configured file to signal that configuration is complete
 while [ ! -f /home/frappe/frappe-bench/.configured ]; do
