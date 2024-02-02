@@ -50,10 +50,11 @@ services:
       - redis-queue
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe
 
-  web:
+  gunicorn:
     image: frappe/bench:latest
     entrypoint:
       - bash
@@ -70,6 +71,7 @@ services:
       - "8000:8000"
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -95,6 +97,7 @@ services:
       - "9000:9000"
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -118,6 +121,7 @@ services:
         bench watch
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -141,6 +145,7 @@ services:
         bench schedule
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -164,6 +169,7 @@ services:
         bench worker --queue short
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -187,6 +193,7 @@ services:
         bench worker --queue long
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -210,6 +217,7 @@ services:
         bench worker --queue default
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
     depends_on:
@@ -218,7 +226,27 @@ services:
       - redis-queue
     restart: always
 
+  web:
+    image: frappe/erpnext:latest
+    command:
+      - nginx-entrypoint.sh
+    environment:
+      BACKEND: gunicorn:8000
+      SOCKETIO: socketio:9000
+      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME:-$$host}
+      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
+      UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
+      UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
+      PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
+      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
+    volumes:
+      - frappe-sites:/home/frappe/frappe-bench/sites
+    depends_on:
+      - gunicorn
+      - socketio
+
 volumes:
-  mariadb-data:
   frappe-data:
   frappe-logs:
+  frappe-sites:
+  mariadb-data:
