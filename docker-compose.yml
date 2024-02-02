@@ -3,7 +3,6 @@ x-frappe-image: &frappe_image
 
 x-frappe-service-defaults: &frappe_service_defaults
     volumes:
-      - ./wait-for-configurator.sh:/usr/local/bin/wait-for-configurator.sh
       - frappe-data:/home/frappe/frappe-bench
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
@@ -15,8 +14,17 @@ x-frappe-service-depends: &frappe_service_depends
       - redis-queue
 
 x-wait-for-configurator: &wait_for_configurator
-    entrypoint: /usr/local/bin/wait-for-configurator.sh
-    restart: always
+  entrypoint:
+    - /bin/bash
+    - -c
+    - |
+      if [ ! -f /home/frappe/frappe-bench/.configured ]; then
+        echo "Waiting for configuration to be completed...";
+        while [ ! -f /home/frappe/frappe-bench/.configured ]; do sleep 60; done;
+      fi
+      echo "Configuration detected, proceeding...";
+      exec "$$@"
+  restart: always
 
 services:
   mariadb:
@@ -60,17 +68,19 @@ services:
           bench set-config -gp developer_mode 1 &&
           bench new-site --no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${SITE_NAME} &&
           bench enable-scheduler &&
-          pip install --no-warn-script-location -U -e ./apps/frappe &&
+          ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python &&
+          # bench migrate-env python3 &&
+          # pip install --no-warn-script-location -U -e ./apps/frappe &&
           touch /home/frappe/frappe-bench/.configured
         else
           echo "Configuration already completed."
         fi
 
-  gunicorn:
+  backend:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
 
-  socketio:
+  websocket:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: node apps/frappe/socketio.js
 
@@ -98,17 +108,19 @@ services:
     <<: [*frappe_image, *frappe_service_defaults, *wait_for_configurator]
     command: nginx-entrypoint.sh
     environment:
-      BACKEND: gunicorn:8000
-      SOCKETIO: socketio:9000
-      FRAPPE_SITE_NAME_HEADER: ${SITE_NAME:-$$host}
+      BACKEND: backend:8000
+      SOCKETIO: websocket:9000
+      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
       UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
       UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
       UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
       PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
       CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
     depends_on:
-      - gunicorn
-      - socketio
+      - backend
+      - websocket
+    ports:
+      - 8080:8080
 
 volumes:
   frappe-data:
