@@ -101,7 +101,6 @@ services:
     restart: always
 
   watch:
-    <<: [*depends_on_configurator]
     image: frappe/bench:latest
     entrypoint:
       - bash
