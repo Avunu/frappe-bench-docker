@@ -28,7 +28,7 @@ services:
       - >
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
-          bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
+          bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist frappe-bench &&
           cd frappe-bench &&
           bench set-config -g db_type mariadb &&
           bench set-config -g db_host mariadb &&
