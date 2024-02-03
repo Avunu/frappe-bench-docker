@@ -113,7 +113,10 @@ services:
       - "8080:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - frappe-data:/home/frappe/frappe-bench/sites
+      - frappe-data:/home/frappe/frappe-bench
+    depends_on:
+      - backend
+      - websocket
 
 volumes:
   frappe-data:
