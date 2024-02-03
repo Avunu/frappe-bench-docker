@@ -4,7 +4,7 @@ x-frappe-image: &frappe_image
 x-frappe-service-defaults: &frappe_service_defaults
     volumes:
       - frappe-data:/home/frappe/frappe-bench
-      # - frappe-sites:/home/frappe/frappe-bench/sites
+      - frappe-sites:/home/frappe/frappe-bench/sites
       # - frappe-logs:/home/frappe/logs
 
 x-frappe-service-depends: &frappe_service_depends
@@ -58,11 +58,10 @@ services:
       - >
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
-          # sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
+          sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
           # sudo chown -R frappe:frappe /home/frappe/logs &&
-          # find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
-          # rm -rf /home/frappe/frappe-bench/sites/* &&
-          rm -rf /home/frappe/frappe-bench/* &&
+          find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
+          rm -rf /home/frappe/frappe-bench/sites/* &&
           bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
           bench set-config -g db_type mariadb &&
           bench set-config -g db_host mariadb &&
@@ -78,11 +77,11 @@ services:
           sudo touch /usr/local/bin/python &&
           ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python &&
           ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python3 &&
-          # bench migrate-env python3 &&
-          # pip install --no-warn-script-location -U -e ./apps/frappe &&
+          for app in apps/*; do ln -sfn "$(pwd)/$app/public" "sites/assets/$(basename $app)"; done &&
           touch /home/frappe/frappe-bench/.configured
         else
-          echo "Configuration already completed."
+          echo "Configuration already completed. Relinking assets..."
+          for app in apps/*; do ln -sfn "$(pwd)/$app/public" "sites/assets/$(basename $app)"; done
         fi
     working_dir: /home/frappe/frappe-bench
 
@@ -145,5 +144,5 @@ services:
 volumes:
   frappe-data:
   # frappe-logs:
-  # frappe-sites:
+  frappe-sites:
   mariadb-data:
