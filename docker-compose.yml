@@ -1,5 +1,5 @@
 x-frappe-image: &frappe_image
-    image: frappe/bench:latest
+    image: frappe/erpnext:latest
 
 x-frappe-service-defaults: &frappe_service_defaults
     volumes:
@@ -83,36 +83,35 @@ services:
 
   backend:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
+    command: exec /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
 
   websocket:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: /bin/bash sleep 600
+    command: exec /bin/bash sleep 600
 
   watch:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: bench watch
+    command: exec bench watch
 
   schedule:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: bench schedule
+    command: exec bench schedule
 
   worker_short:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: bench worker --queue short
+    command: exec bench worker --queue short
 
   worker_long:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: bench worker --queue long
+    command: exec bench worker --queue long
 
   worker_default:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: bench worker --queue default
+    command: exec bench worker --queue default
 
   web:
-    <<: [*frappe_service_defaults, *wait_for_configurator]
-    image: frappe/erpnext:latest
-    command: nginx-entrypoint.sh
+    <<: [*frappe_image, *frappe_service_defaults, *wait_for_configurator]
+    command: exec nginx-entrypoint.sh
     environment:
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
