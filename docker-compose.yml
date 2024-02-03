@@ -87,7 +87,7 @@ services:
 
   websocket:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: exec /bin/bash sleep 600
+    command: exec node apps/frappe/socketio.js
 
   watch:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
