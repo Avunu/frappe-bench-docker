@@ -61,7 +61,8 @@ services:
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
           sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
           sudo chown -R frappe:frappe /home/frappe/logs &&
-          rm -rf /home/frappe/frappe-bench/* &&
+          rm -rf /home/frappe/frappe-bench/!(sites)* &&
+          rm -rf /home/frappe/frappe-bench/sites/* &&
           bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
           bench set-config -g db_type mariadb &&
           bench set-config -g db_host mariadb &&
