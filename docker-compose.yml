@@ -1,10 +1,7 @@
-x-frappe-image: &frappe_image
-    image: frappe/bench:latest
-
 x-frappe-service-defaults: &frappe_service_defaults
+    image: frappe/bench:latest
     volumes:
       - frappe-data:/home/frappe/frappe-bench
-      # - frappe-sites:/home/frappe/frappe-bench/sites
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
@@ -49,7 +46,6 @@ services:
 
   configurator:
     <<: *frappe_service_defaults
-    image: frappe/bench:latest
     entrypoint:
       - bash
       - -c
@@ -57,9 +53,6 @@ services:
       - >
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
-          # sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
-          # find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
-          # rm -rf /home/frappe/frappe-bench/sites/* &&
           rm -rf /home/frappe/frappe-bench/* &&
           bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
           bench set-config -g db_type mariadb &&
@@ -71,12 +64,6 @@ services:
           bench set-config -gp developer_mode 1 &&
           bench new-site --no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${FRAPPE_SITE_NAME_HEADER} &&
           bench enable-scheduler &&
-          # rm /home/frappe/frappe-bench/env/bin/python &&
-          # rm /home/frappe/frappe-bench/env/bin/python3 &&
-          # sudo touch /usr/local/bin/python &&
-          # ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python &&
-          # ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python3 &&
-          for app in apps/*; do ln -sfn "$(pwd)/$app/public" "sites/assets/$(basename $app)"; done &&
           touch /home/frappe/frappe-bench/.configured
         else
           echo "Configuration already completed."
@@ -84,60 +71,41 @@ services:
     working_dir: /home/frappe/frappe-bench
 
   backend:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    command: exec /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 --log-level debug frappe.app:application --preload
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    command: exec /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
     environment:
       - GUNICORN_CMD_ARGS=--access-logfile /home/frappe/frappe-bench/logs/web.log --error-logfile /home/frappe/frappe-bench/logs/web.error.log
     working_dir: /home/frappe/frappe-bench/sites
 
   websocket:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: exec node apps/frappe/socketio.js
     working_dir: /home/frappe/frappe-bench
 
   watch:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: exec bench watch
     working_dir: /home/frappe/frappe-bench
 
   schedule:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: exec bench schedule
     working_dir: /home/frappe/frappe-bench
 
   worker_short:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: exec bench worker --queue short
     working_dir: /home/frappe/frappe-bench
 
   worker_long:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: exec bench worker --queue long
     working_dir: /home/frappe/frappe-bench
 
   worker_default:
-    <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
+    <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
     command: exec bench worker --queue default
     working_dir: /home/frappe/frappe-bench
-
-  # web:
-  #   <<: [*frappe_image, *frappe_service_defaults, *wait_for_configurator]
-  #   command: exec nginx-entrypoint.sh
-  #   environment:
-  #     BACKEND: backend:8000
-  #     SOCKETIO: websocket:9000
-  #     FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
-  #     UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
-  #     UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
-  #     UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
-  #     PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
-  #     CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
-  #   depends_on:
-  #     - backend
-  #     - websocket
-  #   ports:
-  #     - 8080:8080
-  #   working_dir: /home/frappe/frappe-bench
 
   web:
     image: caddy:2-alpine
@@ -149,5 +117,4 @@ services:
 
 volumes:
   frappe-data:
-  # frappe-sites:
   mariadb-data:
