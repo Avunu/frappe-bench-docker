@@ -17,15 +17,14 @@ x-wait-for-configurator: &wait_for_configurator
   entrypoint:
     - /bin/bash
     - -c
-  command:
-    - >
+    - |
       if [ ! -f /home/frappe/frappe-bench/.configured ]; then
         echo "Waiting for configuration to be completed...";
         while [ ! -f /home/frappe/frappe-bench/.configured ]; do sleep 60; done;
       fi
       echo "Configuration detected, proceeding with the following command:" &&
-      echo $SERVICE_COMMAND &&
-      exec $SERVICE_COMMAND
+      echo "$@" &&
+      exec "$@"
   restart: always
 
 services:
@@ -84,44 +83,37 @@ services:
 
   backend:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
+    command: /home/frappe/frappe-bench/env/bin/gunicorn -b 0.0.0.0:8000 -w 4 --max-requests 1200 --max-requests-jitter 50 -t 120 frappe.app:application --preload
 
   websocket:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: node apps/frappe/socketio.js
+    command: /bin/bash sleep 600
 
   watch:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: bench watch
+    command: bench watch
 
   schedule:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: bench schedule
+    command: bench schedule
 
   worker_short:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: bench worker --queue short
+    command: bench worker --queue short
 
   worker_long:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: bench worker --queue long
+    command: bench worker --queue long
 
   worker_default:
     <<: [*frappe_image, *frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
-    environment:
-      SERVICE_COMMAND: bench worker --queue default
+    command: bench worker --queue default
 
   web:
     <<: [*frappe_service_defaults, *wait_for_configurator]
     image: frappe/erpnext:latest
+    command: nginx-entrypoint.sh
     environment:
-      SERVICE_COMMAND: nginx-entrypoint.sh
       BACKEND: backend:8000
       SOCKETIO: websocket:9000
       FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
