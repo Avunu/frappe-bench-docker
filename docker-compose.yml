@@ -5,7 +5,6 @@ x-frappe-service-defaults: &frappe_service_defaults
     volumes:
       - frappe-data:/home/frappe/frappe-bench
       - frappe-sites:/home/frappe/frappe-bench/sites
-      # - frappe-logs:/home/frappe/logs
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
@@ -59,7 +58,6 @@ services:
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
           sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
-          # sudo chown -R frappe:frappe /home/frappe/logs &&
           find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
           rm -rf /home/frappe/frappe-bench/sites/* &&
           bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
@@ -80,8 +78,7 @@ services:
           for app in apps/*; do ln -sfn "$(pwd)/$app/public" "sites/assets/$(basename $app)"; done &&
           touch /home/frappe/frappe-bench/.configured
         else
-          echo "Configuration already completed. Relinking assets..."
-          for app in apps/*; do ln -sfn "$(pwd)/$app/public" "sites/assets/$(basename $app)"; done
+          echo "Configuration already completed."
         fi
     working_dir: /home/frappe/frappe-bench
 
@@ -143,6 +140,5 @@ services:
 
 volumes:
   frappe-data:
-  # frappe-logs:
   frappe-sites:
   mariadb-data:
