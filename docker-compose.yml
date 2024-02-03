@@ -1,10 +1,10 @@
 x-frappe-image: &frappe_image
-    image: frappe/erpnext:latest
+    image: frappe/bench:latest
 
 x-frappe-service-defaults: &frappe_service_defaults
     volumes:
       - frappe-data:/home/frappe/frappe-bench
-      - frappe-sites:/home/frappe/frappe-bench/sites
+      # - frappe-sites:/home/frappe/frappe-bench/sites
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
@@ -57,9 +57,10 @@ services:
       - >
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
-          sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
-          find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
-          rm -rf /home/frappe/frappe-bench/sites/* &&
+          # sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
+          # find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
+          # rm -rf /home/frappe/frappe-bench/sites/* &&
+          rm -rf /home/frappe/frappe-bench/* &&
           bench init --skip-redis-config-generation --version=${FRAPPE_VERSION} --ignore-exist /home/frappe/frappe-bench &&
           bench set-config -g db_type mariadb &&
           bench set-config -g db_host mariadb &&
@@ -70,11 +71,11 @@ services:
           bench set-config -gp developer_mode 1 &&
           bench new-site --no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${FRAPPE_SITE_NAME_HEADER} &&
           bench enable-scheduler &&
-          rm /home/frappe/frappe-bench/env/bin/python &&
-          rm /home/frappe/frappe-bench/env/bin/python3 &&
-          sudo touch /usr/local/bin/python &&
-          ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python &&
-          ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python3 &&
+          # rm /home/frappe/frappe-bench/env/bin/python &&
+          # rm /home/frappe/frappe-bench/env/bin/python3 &&
+          # sudo touch /usr/local/bin/python &&
+          # ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python &&
+          # ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python3 &&
           for app in apps/*; do ln -sfn "$(pwd)/$app/public" "sites/assets/$(basename $app)"; done &&
           touch /home/frappe/frappe-bench/.configured
         else
@@ -119,26 +120,54 @@ services:
     command: exec bench worker --queue default
     working_dir: /home/frappe/frappe-bench
 
+  # web:
+  #   <<: [*frappe_image, *frappe_service_defaults, *wait_for_configurator]
+  #   command: exec nginx-entrypoint.sh
+  #   environment:
+  #     BACKEND: backend:8000
+  #     SOCKETIO: websocket:9000
+  #     FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
+  #     UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
+  #     UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
+  #     UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
+  #     PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
+  #     CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
+  #   depends_on:
+  #     - backend
+  #     - websocket
+  #   ports:
+  #     - 8080:8080
+  #   working_dir: /home/frappe/frappe-bench
+
   web:
-    <<: [*frappe_image, *frappe_service_defaults, *wait_for_configurator]
-    command: exec nginx-entrypoint.sh
-    environment:
-      BACKEND: backend:8000
-      SOCKETIO: websocket:9000
-      FRAPPE_SITE_NAME_HEADER: ${FRAPPE_SITE_NAME_HEADER:-$$host}
-      UPSTREAM_REAL_IP_ADDRESS: ${UPSTREAM_REAL_IP_ADDRESS:-127.0.0.1}
-      UPSTREAM_REAL_IP_HEADER: ${UPSTREAM_REAL_IP_HEADER:-X-Forwarded-For}
-      UPSTREAM_REAL_IP_RECURSIVE: ${UPSTREAM_REAL_IP_RECURSIVE:-off}
-      PROXY_READ_TIMEOUT: ${PROXY_READ_TIMEOUT:-120}
-      CLIENT_MAX_BODY_SIZE: ${CLIENT_MAX_BODY_SIZE:-50m}
-    depends_on:
-      - backend
-      - websocket
+    image: caddy:2-alpine
     ports:
-      - 8080:8080
-    working_dir: /home/frappe/frappe-bench
+      - "8080:80"
+    volumes:
+      - frappe-data:/home/frappe/frappe-bench/sites
+    command: |
+      :80 {
+        root * /home/frappe/frappe-bench/sites
+        file_server /assets/* {
+          root /home/frappe/frappe-bench/sites
+        }
+        reverse_proxy /socket.io/* websocket:9000
+        @notStatic {
+          not path /assets/*
+          not path /socket.io/*
+        }
+        reverse_proxy @notStatic backend:8000
+        encode gzip
+        header {
+          X-Frame-Options "SAMEORIGIN"
+          Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+          X-Content-Type-Options "nosniff"
+          X-XSS-Protection "1; mode=block"
+          Referrer-Policy "same-origin, strict-origin-when-cross-origin"
+        }
+      }
 
 volumes:
   frappe-data:
-  frappe-sites:
+  # frappe-sites:
   mariadb-data:
