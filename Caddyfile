@@ -1,0 +1,20 @@
+:80 {
+    root * /home/frappe/frappe-bench/sites
+    file_server /assets/* {
+        root /home/frappe/frappe-bench/sites
+    }
+    reverse_proxy /socket.io/* websocket:9000
+    @notStatic {
+        not path /assets/*
+        not path /socket.io/*
+    }
+    reverse_proxy @notStatic backend:8000
+    encode gzip
+    header {
+        X-Frame-Options "SAMEORIGIN"
+        Strict-Transport-Security "max-age=63072000; includeSubDomains; preload"
+        X-Content-Type-Options "nosniff"
+        X-XSS-Protection "1; mode=block"
+        Referrer-Policy "same-origin, strict-origin-when-cross-origin"
+    }
+}
