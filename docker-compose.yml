@@ -22,7 +22,8 @@ x-wait-for-configurator: &wait_for_configurator
         echo "Waiting for configuration to be completed...";
         while [ ! -f /home/frappe/frappe-bench/.configured ]; do sleep 60; done;
       fi
-      echo "Configuration detected, proceeding...";
+      echo "Configuration detected, proceeding with the following command:" &&
+      echo "$$@"
       exec "$$@"
   restart: always
 
@@ -68,6 +69,8 @@ services:
           bench set-config -gp developer_mode 1 &&
           bench new-site --no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${FRAPPE_SITE_NAME_HEADER} &&
           bench enable-scheduler &&
+          rm /home/frappe/frappe-bench/env/bin/python &&
+          rm /home/frappe/frappe-bench/env/bin/python3 &&
           sudo touch /usr/local/bin/python &&
           ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python &&
           ln -s /usr/local/bin/python /home/frappe/frappe-bench/env/bin/python3 &&
