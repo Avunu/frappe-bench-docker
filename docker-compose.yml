@@ -58,8 +58,8 @@ services:
       - >
         if [ ! -f /home/frappe/frappe-bench/.configured ]; then
           sudo chown -R frappe:frappe /home/frappe/frappe-bench &&
-          sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
-          sudo chown -R frappe:frappe /home/frappe/logs &&
+          # sudo chown -R frappe:frappe /home/frappe/frappe-bench/sites &&
+          # sudo chown -R frappe:frappe /home/frappe/logs &&
           # find /home/frappe/frappe-bench -mindepth 1 -maxdepth 1 ! -name 'sites' -exec rm -rf {} + &&
           # rm -rf /home/frappe/frappe-bench/sites/* &&
           rm -rf /home/frappe/frappe-bench/* &&
