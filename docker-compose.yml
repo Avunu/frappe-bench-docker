@@ -4,6 +4,7 @@ x-frappe-image: &frappe_image
 x-frappe-service-defaults: &frappe_service_defaults
     volumes:
       - frappe-data:/home/frappe/frappe-bench
+      - frappe-sites:/home/frappe/frappe-bench/sites
       - frappe-logs:/home/frappe/logs
     working_dir: /home/frappe/frappe-bench
 
@@ -66,6 +67,7 @@ services:
           bench set-config -g redis_cache redis://redis-cache:6379 &&
           bench set-config -g redis_queue redis://redis-queue:6379 &&
           bench set-config -g redis_socketio redis://redis-queue:6379 &&
+          bench set-config -gp socketio_port 9000 &&
           bench set-config -gp developer_mode 1 &&
           bench new-site --no-mariadb-socket --db-root-password=${DB_ROOT_PASSWORD} --admin-password=${SITE_PASSWORD} --set-default ${FRAPPE_SITE_NAME_HEADER} &&
           bench enable-scheduler &&
@@ -130,4 +132,5 @@ services:
 volumes:
   frappe-data:
   frappe-logs:
+  frappe-sites:
   mariadb-data:
