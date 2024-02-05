@@ -1,7 +1,7 @@
 x-frappe-service-defaults: &frappe_service_defaults
     image: frappe/bench:latest
     volumes:
-      - frappe-data:/home/frappe/frappe-bench
+      - ./frappe-bench:/home/frappe/frappe-bench
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
@@ -34,7 +34,7 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
-      - mariadb-data:/var/lib/mysql
+      - ./mariadb-data:/var/lib/mysql
 
   redis-cache:
     image: redis:alpine
@@ -117,7 +117,3 @@ services:
     depends_on:
       - backend
       - websocket
-
-volumes:
-  frappe-data:
-  mariadb-data:
