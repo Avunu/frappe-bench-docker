@@ -24,6 +24,18 @@ x-wait-for-configurator: &wait_for_configurator
   restart: always
 
 services:
+  cupsd:
+    image: drpsychick/airprint-bridge:latest
+    restart: always
+    environment:
+      CUPS_USER_ADMIN: ${CUPS_USER_ADMIN}
+      CUPS_USER_PASSWORD: ${CUPS_USER_PASSWORD}
+    ports:
+        - "8631:631"
+    volumes:
+      - ./cupsd.conf:/etc/cups/cupsd.conf
+      - ./printers.conf:/etc/cups/printers.conf
+
   mariadb:
     image: mariadb:latest
     restart: always
