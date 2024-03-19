@@ -125,7 +125,7 @@ services:
       - "8080:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - frappe-data:/home/frappe/frappe-bench
+      - ./frappe-bench:/home/frappe/frappe-bench
     depends_on:
       - backend
       - websocket

@@ -1,3 +1,5 @@
 .env
 frappe-bench
 mariadb-data
+cupsd.conf
+printers.conf
