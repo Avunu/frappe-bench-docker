@@ -1,10 +1,14 @@
 x-frappe-service-defaults: &frappe_service_defaults
     image: frappe/bench:latest
     volumes:
-      - frappe-data:/home/frappe/frappe-bench
+      - ./frappe-bench:/home/frappe/frappe-bench
+    networks:
+      - erpnext
+      - lan_net
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
+      - cupsd
       - mariadb
       - redis-cache
       - redis-queue
@@ -24,6 +28,22 @@ x-wait-for-configurator: &wait_for_configurator
   restart: always
 
 services:
+  cupsd:
+    image: drpsychick/airprint-bridge:latest
+    restart: always
+    networks:
+      - erpnext
+      - lan_net
+    environment:
+      CUPS_HOSTNAME: ${CUPS_HOSTNAME}
+      CUPS_USER_ADMIN: ${CUPS_USER_ADMIN}
+      CUPS_USER_PASSWORD: ${CUPS_USER_PASSWORD}
+    ports:
+        - "8631:631"
+    volumes:
+      - ./cupsd.conf:/etc/cups/cupsd.conf
+      - ./printers.conf:/etc/cups/printers.conf
+
   mariadb:
     image: mariadb:latest
     restart: always
@@ -34,15 +54,22 @@ services:
     environment:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
-      - mariadb-data:/var/lib/mysql
+      - ./mariadb-data:/var/lib/mysql
+      - ./mariadb.cnf:/etc/mysql/mariadb.conf.d/100-mariadb.cnf
+    networks:
+      - erpnext
 
   redis-cache:
     image: redis:alpine
     restart: always
+    networks:
+      - erpnext
 
   redis-queue:
     image: redis:alpine
     restart: always
+    networks:
+      - erpnext
 
   configurator:
     <<: *frappe_service_defaults
@@ -69,6 +96,8 @@ services:
           echo "Configuration already completed."
         fi
     working_dir: /home/frappe/frappe-bench
+    networks:
+      - erpnext
 
   backend:
     <<: [*frappe_service_defaults, *frappe_service_depends, *wait_for_configurator]
@@ -113,11 +142,16 @@ services:
       - "8080:80"
     volumes:
       - ./Caddyfile:/etc/caddy/Caddyfile
-      - frappe-data:/home/frappe/frappe-bench
+      - ./frappe-bench:/home/frappe/frappe-bench
     depends_on:
       - backend
       - websocket
+    networks:
+      - erpnext
+	restart: always
 
-volumes:
-  frappe-data:
-  mariadb-data:
+networks:
+  lan_net:
+    external: true
+  erpnext:
+    external: true
