@@ -38,6 +38,10 @@ services:
       CUPS_HOSTNAME: ${CUPS_HOSTNAME}
       CUPS_ADMIN_USER: ${CUPS_ADMIN_USER}
       CUPS_ADMIN_PASSWORD: ${CUPS_ADMIN_PASSWORD}
+      CUPS_WEBINTERFACE: "yes"
+      CUPS_SHARE_PRINTERS: "yes"
+      CUPS_REMOTE_ADMIN: "yes"
+      CUPS_ACCESS_LOGLEVEL: "error"
     ports:
         - "8631:631"
     volumes:
