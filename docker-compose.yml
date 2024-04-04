@@ -4,7 +4,6 @@ x-frappe-service-defaults: &frappe_service_defaults
       - ./frappe-bench:/home/frappe/frappe-bench
     networks:
       - erpnext
-      - lan_net
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
@@ -55,7 +54,7 @@ services:
       MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
     volumes:
       - ./mariadb-data:/var/lib/mysql
-      - ./mariadb.cnf:/etc/mysql/mariadb.conf.d/100-mariadb.cnf
+      - ./mariadb.cnf:/etc/mysql/mariadb.conf.d/100-erpnext.cnf
     networks:
       - erpnext
 
@@ -148,7 +147,7 @@ services:
       - websocket
     networks:
       - erpnext
-	restart: always
+    restart: always
 
 networks:
   lan_net:
