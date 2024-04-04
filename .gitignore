@@ -1,3 +1,4 @@
 .env
 frappe-bench
 mariadb-data
+cups

@@ -40,8 +40,7 @@ services:
     ports:
         - "8631:631"
     volumes:
-      - ./cupsd.conf:/etc/cups/cupsd.conf
-      - ./printers.conf:/etc/cups/printers.conf
+      - ./cups:/etc/cups
 
   mariadb:
     image: mariadb:latest
