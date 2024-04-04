@@ -21,6 +21,7 @@ x-wait-for-configurator: &wait_for_configurator
         echo "Waiting for configuration to be completed...";
         while [ ! -f /home/frappe/frappe-bench/.configured ]; do sleep 60; done;
       fi
+      sudo apt update && sudo apt install libcups2-dev -y
       echo "Configuration detected, proceeding with the following command:" &&
       echo "$@" &&
       exec "$@"
