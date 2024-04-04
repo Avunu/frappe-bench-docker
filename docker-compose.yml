@@ -29,7 +29,7 @@ x-wait-for-configurator: &wait_for_configurator
 
 services:
   cupsd:
-    image: drpsychick/airprint-bridge:latest
+    image: olbat/cupsd:latest
     restart: always
     networks:
       - erpnext
