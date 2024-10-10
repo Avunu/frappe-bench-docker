@@ -1,2 +1,6 @@
 [mariadbd]
 innodb_buffer_pool_size = 4G
+innodb_checksum_algorithm = crc32
+innodb_doublewrite = 0
+innodb_flush_method = O_DSYNC
+innodb_flush_neighbors = 0
