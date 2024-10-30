@@ -4,6 +4,15 @@ x-frappe-service-defaults: &frappe_service_defaults
       - ./frappe-bench:/home/frappe/frappe-bench
     networks:
       - erpnext
+    environment:
+      FRAPPE_BENCH_ROOT: /home/frappe/frappe-bench
+      FRAPPE_DB_HOST: mariadb
+      FRAPPE_DB_TYPE: mariadb
+      FRAPPE_REDIS_CACHE: redis://redis-cache:6379
+      FRAPPE_REDIS_QUEUE: redis://redis-queue:6379
+      FRAPPE_SITE: ${FRAPPE_SITE}
+      FRAPPE_TUNE_GC: 1
+      SITES_PATH: /home/frappe/frappe-bench/sites
 
 x-frappe-service-depends: &frappe_service_depends
     depends_on:
@@ -21,7 +30,9 @@ x-wait-for-configurator: &wait_for_configurator
         echo "Waiting for configuration to be completed...";
         while [ ! -f /home/frappe/frappe-bench/.configured ]; do sleep 60; done;
       fi
-      sudo apt update && sudo apt install libcups2-dev -y
+      sudo dpkg --configure -a &&
+      sudo apt update && sudo apt install libcups2-dev poppler-utils -y &&
+      /home/frappe/frappe-bench/env/bin/pip install --no-warn-script-location -U -e /home/frappe/frappe-bench/apps/bjs &&
       echo "Configuration detected, proceeding with the following command:" &&
       echo "$@" &&
       exec "$@"
@@ -29,7 +40,7 @@ x-wait-for-configurator: &wait_for_configurator
 
 services:
   cupsd:
-    image: olbat/cupsd:latest
+    image: drpsychick/airprint-bridge:latest
     restart: always
     networks:
       - erpnext
