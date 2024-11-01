@@ -31,7 +31,7 @@ x-wait-for-configurator: &wait_for_configurator
         while [ ! -f /home/frappe/frappe-bench/.configured ]; do sleep 60; done;
       fi
       sudo dpkg --configure -a &&
-      sudo apt update && sudo apt install libcups2-dev poppler-utils -y &&
+      sudo apt update && sudo apt install libcups2-dev -y &&
       /home/frappe/frappe-bench/env/bin/pip install --no-warn-script-location -U -e /home/frappe/frappe-bench/apps/bjs &&
       echo "Configuration detected, proceeding with the following command:" &&
       echo "$@" &&
