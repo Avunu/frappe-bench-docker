@@ -3,26 +3,22 @@
 	file_server /assets/* {
 		root /home/frappe/frappe-bench/sites
 	}
-	
+
 	reverse_proxy /socket.io/* websocket:9000 {
-		header_up Host {host}
-		header_up X-Real-IP {remote}
-		header_up X-Forwarded-For {remote}
-		header_up X-Forwarded-Proto {scheme}
-		
+		header_up X-Frappe-Site-Name "erp.bjsraw.biz"
+		header_up Host "erp.bjsraw.biz"
+		header_up Origin "https://erp.bjsraw.biz"
 		transport http {
 			versions 1.1
 		}
-		header_up Upgrade {http.upgrade}
-		header_up Connection {http.connection}
 	}
-	
+
 	@notStatic {
 		not path /assets/*
 		not path /socket.io/*
 	}
 	reverse_proxy @notStatic backend:8000
-	
+
 	encode gzip
 	header {
 		X-Frame-Options "SAMEORIGIN"

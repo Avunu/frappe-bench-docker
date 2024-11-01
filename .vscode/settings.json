@@ -1,0 +1,46 @@
+{
+	"sqltools.connections": [
+		{
+			"mysqlOptions": {
+				"authProtocol": "default",
+				"enableSsl": "Disabled"
+			},
+			"previewLimit": 50,
+			"server": "localhost",
+			"port": 3306,
+			"driver": "MariaDB",
+			"name": "erp.frontlineequip.com",
+			"database": "erp.frontlineequip.com",
+			"username": "erp.frontlineequip.com"
+		},
+		{
+			"mysqlOptions": {
+				"authProtocol": "default",
+				"enableSsl": "Disabled"
+			},
+			"previewLimit": 50,
+			"server": "localhost",
+			"port": 3306,
+			"driver": "MariaDB",
+			"name": "https://pequea.avu.nu/",
+			"socketPath": "/var/run/mysqld/mysqld.sock",
+			"database": "hpiruk",
+			"username": "hpiruk",
+			"password": "3VRCaAgULZgYVPAD"
+		},
+		{
+			"mysqlOptions": {
+				"authProtocol": "default",
+				"enableSsl": "Disabled"
+			},
+			"previewLimit": 50,
+			"server": "mariadb",
+			"port": 3306,
+			"driver": "MariaDB",
+			"name": "erp.bjsraw.biz",
+			"database": "_d0502eab9f557d7a",
+			"username": "_d0502eab9f557d7a",
+			"password": "iY2HQIXx2gA9dpn3"
+		}
+	]
+}

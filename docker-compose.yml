@@ -32,7 +32,6 @@ x-wait-for-configurator: &wait_for_configurator
       fi
       sudo dpkg --configure -a &&
       sudo apt update && sudo apt install libcups2-dev -y &&
-      /home/frappe/frappe-bench/env/bin/pip install --no-warn-script-location -U -e /home/frappe/frappe-bench/apps/bjs &&
       echo "Configuration detected, proceeding with the following command:" &&
       echo "$@" &&
       exec "$@"
@@ -107,7 +106,8 @@ services:
           bench enable-scheduler &&
           touch /home/frappe/frappe-bench/.configured
         else
-          echo "Configuration already completed."
+          /home/frappe/frappe-bench/env/bin/pip install --no-warn-script-location -U -e /home/frappe/frappe-bench/apps/bjs &&
+          echo "Configuration completed."
         fi
     working_dir: /home/frappe/frappe-bench
     networks:
