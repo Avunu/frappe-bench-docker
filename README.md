@@ -1,3 +1,16 @@
+> [!WARNING]
+> **Deprecated: superseded by [frappe-nix](https://github.com/Avunu/frappe-nix).** This repository is no longer actively developed. It is kept online, unarchived, for reference and for anyone who cannot use Nix.
+>
+> frappe-nix covers the same ground and more: a `devenv` development shell (MariaDB, Redis, the Frappe runtime, asset watch, Mailpit), reproducible production builds, OCI container images, and a NixOS module for running benches in production.
+>
+> **Moving to frappe-nix**
+>
+> - New bench: install [Nix](https://nixos.org/download/) with flakes enabled, then run `nix run github:Avunu/frappe-nix` and follow the prompts, as described in the [frappe-nix README](https://github.com/Avunu/frappe-nix#create-a-new-bench). Start the stack with `devenv up`, and run `provision-site` in a second shell to create the site.
+> - Existing bench: the `./frappe-bench/` directory this setup creates is a classic `bench init` bench. Run `nix run github:Avunu/frappe-nix -- --dry-run` inside it to preview the conversion, then drop `--dry-run` to apply it. See [Migrate an existing bench](https://github.com/Avunu/frappe-nix#migrate-an-existing-bench).
+> - Data: this setup keeps the database in `./mariadb-data/`, which frappe-nix does not read. Run `./bench.sh "backup"` before you switch (backups land under `./frappe-bench/sites/<site>/private/backups/`) and restore that backup into the new site.
+>
+> The defaults below (for example the `admin` and `123` passwords) are for local development only. Do not use this stack in production.
+
 # frappe-bench-docker
 
 🚀 **Deploy persistent docker-powered Frappe sites without building custom images**
